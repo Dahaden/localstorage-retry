@@ -389,7 +389,11 @@ describe('Queue', function() {
 
 describe('events', function() {
   var queue;
+  var clock;
+
   beforeEach(function() {
+    clock = lolex.createClock(0);
+    Schedule.setClock(clock);
     queue = new Queue('events', function(_, cb) {
       cb();
     });
@@ -397,6 +401,7 @@ describe('events', function() {
 
   afterEach(function() {
     queue.stop();
+    Schedule.resetClock();
   });
 
   it('should emit processed with response, and item', function(done) {
@@ -442,6 +447,30 @@ describe('events', function() {
     });
     queue.start();
     queue.addItem({ a: 'b' });
+    clock.runAll();
+  });
+
+  it('should emit overflow if the adding a message exceeds queue maxItems', function(done) {
+    var firstEvent = { a: 'b' };
+    var otherEvents = { c: 'd' };
+
+    queue.fn = function(item, cb) {
+      cb(new Error('no'));
+    };
+
+    queue.maxItems = 5;
+    queue.on('overflow', function(item, attempts) {
+      assert.equal(item.a, firstEvent.a);
+      assert.equal(attempts, 0);
+      done();
+    });
+    queue.addItem(firstEvent);
+    clock.tick(10);
+    queue.addItem(otherEvents);
+    queue.addItem(otherEvents);
+    queue.addItem(otherEvents);
+    queue.addItem(otherEvents);
+    queue.addItem(otherEvents);
   });
 });
 
