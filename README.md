@@ -147,6 +147,8 @@ You can listen for `processed` events, which are emitted with each invocation of
 
 If a message is discarded entirely because it does not pass your `shouldRetry` logic upon attempted re-enqueuing, the queue will emit a `discard` event.
 
+Additionally, if a message is discarded because the queue exceeds `maxItems`, the queue will emit an `overflow` event.
+
 ### `processed`
 
 ```javascript
@@ -161,6 +163,14 @@ queue.on('processed', function(err, res, item) {
 ```javascript
 queue.on('discard', function(item, attempts) {
   console.error('discarding message %O after %d attempts', item, attempts);
+})
+```
+
+### `overflow`
+
+```javascript
+queue.on('overflow', function(item, attempts) {
+  console.error('discarding message %O after %d attempts due to queue overflow', item, attempts);
 })
 ```
 
